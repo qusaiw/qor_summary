@@ -8,3 +8,5 @@ for path in some_list:
     print path
     print '******'
 something = "average = (rise_delay + fall_delay) / 2"
+o = "ookPINjnkjnm"
+print o.split("PIN")

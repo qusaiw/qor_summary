@@ -34,27 +34,62 @@ if os.path.basename(args.path) != 'cells':
 class Cell(object):
     def __init__(self, cells):
         self.cells = cells
+        self.attributes = []
+        # expected to hold a list of CSV lines to write in order onto the final output
+        self.content = []
+        self.pins = []
         self.fail = None
 
     def open_log(self, cell, path):
         try:
+            # pattern for QOR file
             wildcard = os.path.join(path, cell, "qor*log")
             logs = glob.glob(wildcard)
             if len(logs) != 1:
                 raise ValueError(len(logs))
         except ValueError, length:
             if length == 0:
-                self.error("No qor file")
+                self.error("No qor file for %s" % cell)
                 return
             else:
-                self.error("Multiple QOR files")
+                self.error("Multiple QOR files in %s" % cell)
                 return
         log = open(logs[0], 'r')
-        for line in log:
+        lines = log.readlines()
+        # Flag for finding any keyword in the file.
+        found_attributes = False
+        for line_num, line in enumerate(lines):
             if any(word in line for word in KEY_WORDS):
-                pass
-            else:
-                self.error("Corrupted or unrecognized QOR file format")
+                found_attributes = True
+                line = line.split(',')
+                indices = []
+                for n, word in line:
+                    if word in KEY_WORDS:
+                        indices.append(n)
+                        self.attributes.append(word)
+            if found_attributes and "END Simulation" not in line:
+                # flipflops don't have a pin name in the QOR file
+                pin_name = None
+                line = line.split(',')
+                # the first element contains the <cell_name>_PIN_<pin_name>
+                # so these next lines are for unpacking it and modifying line[0] to have just the first value
+                to_unpack = line[0].split(" ")
+                line[0] = to_unpack[1]
+                to_unpack = to_unpack[0].split('_PIN_')
+                if len(to_unpack) == 2:
+                    pin_name = to_unpack[1]
+                elif len(to_unpack) > 2:
+                    self.error("Unrecognized formal in %s" % cell)
+                    return
+                pin_name = cell if not pin_name else pin_name
+                self.pins.append(pin_name)
+                new_values = []
+                for value in line:
+                    new_values.append(value)
+                self.content.append(new_values)
+        if not found_attributes:
+            self.error("Corrupted or unrecognized QOR file format for %s" % cell)
+            return
 
     def error(self, error):
         self.fail = error
