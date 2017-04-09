@@ -13,8 +13,7 @@ import glob
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s')
 
-# You can change these two lists, KEY_WORDS should have the names of the parameters as found in the qor log
-# ADDITIONAL_PARAMS can have operations involving other params
+# You can change KEY_WORDS to have the names of the parameters as found in the qor log
 # For example if KEY_WORDS = ['rise_delay', 'fall_delay']
 KEY_WORDS = ["rise_delay", "fall_delay", "avg_delay", "cud_delay_fr", "cud_delay_rf", "cud_avg_delay",
              "rise_fall_perc_diff"]
